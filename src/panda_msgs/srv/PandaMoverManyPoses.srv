@@ -1,0 +1,4 @@
+PandaMoveitJoints joints_input
+geometry_msgs/Pose[] poses
+---
+moveit_msgs/RobotTrajectory[] trajectories

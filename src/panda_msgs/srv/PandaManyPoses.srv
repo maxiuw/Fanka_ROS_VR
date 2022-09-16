@@ -1,0 +1,4 @@
+float64[] current_joints
+geometry_msgs/Pose[] poses
+---
+moveit_msgs/RobotTrajectory[] trajectories
