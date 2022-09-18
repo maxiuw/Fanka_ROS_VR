@@ -108,7 +108,6 @@ def all_close(goal, actual, tolerance):
 
 
 class UnityPythonConnector(object):
-    """MoveGroupPythonInterfaceTutorial"""
 
     def __init__(self):
         super(UnityPythonConnector, self).__init__()
@@ -116,16 +115,26 @@ class UnityPythonConnector(object):
         ## BEGIN_SUB_TUTORIAL setup
         ##
         ## First initialize `moveit_commander`_ and a `rospy`_ node:
-        moveit_commander.roscpp_initialize(sys.argv)
+        moveit_commander.roscpp_initialize("unity_python_node")
         rospy.init_node("unity_python", anonymous=True)
         joint_state_publisher_Unity = rospy.Publisher("/joint_state_unity", FloatList , queue_size = 10)
+        self.plan_publisher = rospy.Publisher(
+            "plan_publisher",
+            moveit_msgs.msg.RobotTrajectory,
+            queue_size=20,
+        )
+       
         ## Instantiate a `RobotCommander`_ object. Provides information such as the robot's
         ## kinematic model and the robot's current joint states
+        print("loading robot")
         robot = moveit_commander.RobotCommander()
+        # group_names = robot.get_group_names()
+        print("============ Available Planning Groups:", robot.get_group_names())
         # robot = moveit_msgs.msg.RobotState()
         ## Instantiate a `PlanningSceneInterface`_ object.  This provides a remote interface
         ## for getting, setting, and updating the robot's internal understanding of the
         ## surrounding world:
+        print("loading planning scene")
         scene = moveit_commander.PlanningSceneInterface()
         tau = 2 * math.pi
         ## Instantiate a `MoveGroupCommander`_ object.  This object is an interface
@@ -134,22 +143,19 @@ class UnityPythonConnector(object):
         ## If you are using a different robot, change this value to the name of your robot
         ## arm planning group.
         ## This interface can be used to plan and execute motions:
+        print("loading group")
         group_name = "panda_arm"
-        move_group = moveit_commander.MoveGroupCommander(group_name)
+        move_group = moveit_commander.MoveGroupCommander(robot.get_group_names()[0], wait_for_servers=150.0)
 
         ## Create a `DisplayTrajectory`_ ROS publisher which is used to display
         ## trajectories in Rviz:
-        display_trajectory_publisher = rospy.Publisher(
-            "/move_group/display_planned_path",
-            moveit_msgs.msg.DisplayTrajectory,
-            queue_size=20,
-        )
+        # display_trajectory_publisher = rospy.Publisher(
+        #     "/move_group/display_planned_path",
+        #     moveit_msgs.msg.DisplayTrajectory,
+        #     queue_size=20,
+        # )
         
-        self.plan_publisher = rospy.Publisher(
-            "plan_publisher",
-            moveit_msgs.msg.RobotTrajectory,
-            queue_size=20,
-        )
+        
 
         ## END_SUB_TUTORIAL
 
@@ -182,7 +188,7 @@ class UnityPythonConnector(object):
         self.robot = robot
         self.scene = scene
         self.move_group = move_group
-        self.display_trajectory_publisher = display_trajectory_publisher
+        # self.display_trajectory_publisher = display_trajectory_publisher
         self.planning_frame = planning_frame
         self.eef_link = eef_link
         # self.group_names = group_names

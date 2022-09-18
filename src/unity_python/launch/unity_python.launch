@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="interface_moveitgroup" pkg="unity_python" type="interface_moveitgroup" respawn="false" output="screen">
+  </node>
+
+</launch>
