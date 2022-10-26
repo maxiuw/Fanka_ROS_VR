@@ -3,6 +3,8 @@ from __future__ import print_function
 
 # other imports
 import time
+
+from cv2 import ROTATE_180
 from trainer import Trainer
 import matplotlib.pylab as plt 
 import numpy as np 
@@ -36,7 +38,7 @@ class Image_converter(Trainer):
     self.prediction_pub = rospy.Publisher("/predictedObjects", String, queue_size=2)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/XRCamera", Image, self.callback)
+    self.image_sub = rospy.Subscriber("/camera_top/image_raw", Image, self.callback)
     # self.trainer = Trainer()
 
 
@@ -46,10 +48,12 @@ class Image_converter(Trainer):
     self.trainer.dataname = "unityDF"
     self.trainer.n_classes = 4   
     self.trainer.pretrained_model_weights = "COCO-Detection/faster_rcnn_R_50_FPN_3x.yaml" 
-    self.trainer.setup()
-    self.trainer.load_testdataset()
-    self.trainer.load_model()
+    # self.trainer.setup() // if special model
+    # self.trainer.load_testdataset() // if special model
+    # self.trainer.load_model() // if special model
+    self.trainer.load_buildin_model()
     self.dictopub = {'bb': [], 'classes':None}
+    self.current_time = time.time()
   
   
   def publish_predictions(self, predictions):
@@ -60,7 +64,15 @@ class Image_converter(Trainer):
       # print(self.dictopub["bb"].tensor)
       self.prediction_pub.publish(json.dumps(self.dictopub))
 
-  def callback(self,data):
+  def callback(self, data):
+    # print(self.current_time - time.time())
+    if (time.time() - self.current_time  < 0.1):
+      return
+    else:
+      self.current_time = time.time()
+      
+    # if self.frames < 10:
+
     # Convert the image from OpenCV to ROS format
     try:
       cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -78,11 +90,12 @@ class Image_converter(Trainer):
       rotated = rotated[:,::-1]
       # print(self.trainer.predictor)
       prediction = self.trainer.predictor(rotated)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
-      # print(prediction)
+      # # print(prediction)
       viz = Visualizer(rotated[:, :,::-1], MetadataCatalog.get(self.trainer.cfg.DATASETS.TEST[0]), scale=1.2)
       out = viz.draw_instance_predictions(prediction["instances"].to("cpu"))
-      self.publish_predictions(prediction)
-      print(prediction)
+      # self.publish_predictions(prediction)
+      # print(prediction)
+      # print(f"{h} x {w}")
       # print(out)
       # cv2.imshow("im",out.get_image())
       # # plt.show()
@@ -92,7 +105,8 @@ class Image_converter(Trainer):
     # Publish the image
     try:
       # out = out.get_image()[:, :, ::-1]
-      self.image_pub.publish(self.bridge.cv2_to_imgmsg(out.get_image()[:, :, ::-1], "bgr8"))
+      self.image_pub.publish(self.bridge.cv2_to_imgmsg(
+                        cv2.rotate(cv2.resize(out.get_image()[:, :, ::-1], (256,256), interpolation = cv2.INTER_AREA),ROTATE_180), "rgb8"))
     except CvBridgeError as e:
       print(f"this is error 3 {e}")
 

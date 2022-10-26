@@ -32,7 +32,8 @@ class Trainer:
         self.test_data = ""
         self.test_metadata = ""
         self.predictor = None
-
+        self.cfg = None 
+        
     def prepare_data(self, path:str):
         register_coco_instances(self.dataname, {}, f"{path}/labels.json", path)
         dataunity = DatasetCatalog.get(self.dataname)
@@ -137,6 +138,15 @@ class Trainer:
                 rows+=1
                 cols = 0
         plt.show()
+
+    def load_buildin_model(self):
+        self.cfg = get_cfg()
+        # add project-specific config (e.g., TensorMask) here if you're not running a model in detectron2's core library
+        self.cfg.merge_from_file(model_zoo.get_config_file("COCO-Detection/faster_rcnn_R_50_DC5_1x.yaml"))
+        self.cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.5  # set threshold for this model
+        # Find a model from detectron2's model zoo. You can use the https://dl.fbaipublicfiles... url as well
+        self.cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-Detection/faster_rcnn_R_50_DC5_1x.yaml")
+        self.predictor = DefaultPredictor(self.cfg)
           
 
 
