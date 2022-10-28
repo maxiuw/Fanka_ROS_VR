@@ -36,10 +36,13 @@ class Image_converter(Trainer):
     self.setup_model()
     self.image_pub = rospy.Publisher("/myresult", Image, queue_size=2)
     self.prediction_pub = rospy.Publisher("/predictedObjects", String, queue_size=2)
-
+    self.metadata = MetadataCatalog.get(self.trainer.cfg.DATASETS.TEST[0])
     self.bridge = CvBridge()
     self.image_sub = rospy.Subscriber("/camera_top/image_raw", Image, self.callback)
     # self.trainer = Trainer()
+    # self.metadata.set(**{'person':'bla'})
+    self.rename()
+    
 
 
 
@@ -53,8 +56,22 @@ class Image_converter(Trainer):
     # self.trainer.load_model() // if special model
     self.trainer.load_buildin_model()
     self.dictopub = {'bb': [], 'classes':None}
-    self.current_time = time.time()
+    self.current_time = time.time() 
   
+
+  def rename(self):
+    # labels 
+    # bannana 52
+    # apple 53
+    # orange 55 
+    # baseball bat 39 - pen 
+    # vase 86 - bana
+    # cheating with renaming, change for the real project 
+    print(self.metadata)
+    self.metadata.thing_classes[self.metadata.thing_classes.index("baseball bat")] = "pen"
+    self.metadata.thing_classes[self.metadata.thing_classes.index("vase")] = "banana"
+    self.metadata.thing_classes[self.metadata.thing_classes.index("toothbrush")] = "banana"
+
   
   def publish_predictions(self, predictions):
     # basically if smt changed in the scene     
@@ -91,9 +108,9 @@ class Image_converter(Trainer):
       # print(self.trainer.predictor)
       prediction = self.trainer.predictor(rotated)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
       # # print(prediction)
-      viz = Visualizer(rotated[:, :,::-1], MetadataCatalog.get(self.trainer.cfg.DATASETS.TEST[0]), scale=1.2)
+      viz = Visualizer(rotated[:, :,::-1], self.metadata, scale=1.2)
       out = viz.draw_instance_predictions(prediction["instances"].to("cpu"))
-      # self.publish_predictions(prediction)
+      self.publish_predictions(prediction)
       # print(prediction)
       # print(f"{h} x {w}")
       # print(out)
