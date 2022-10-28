@@ -67,8 +67,8 @@ class Image_converter(Trainer):
     # baseball bat 39 - pen 
     # vase 86 - bana
     # cheating with renaming, change for the real project 
-    print(self.metadata)
-    self.metadata.thing_classes[self.metadata.thing_classes.index("baseball bat")] = "pen"
+    # print(self.metadata)
+    print(self.metadata.thing_classes.index("banana"), self.metadata.thing_classes.index("apple"))
     self.metadata.thing_classes[self.metadata.thing_classes.index("vase")] = "banana"
     self.metadata.thing_classes[self.metadata.thing_classes.index("toothbrush")] = "banana"
 
@@ -109,8 +109,14 @@ class Image_converter(Trainer):
       prediction = self.trainer.predictor(rotated)  # format is documented at https://detectron2.readthedocs.io/tutorials/models.html#model-output-format
       # # print(prediction)
       viz = Visualizer(rotated[:, :,::-1], self.metadata, scale=1.2)
-      out = viz.draw_instance_predictions(prediction["instances"].to("cpu"))
+      instances = prediction["instances"].to("cpu")
+      # filtering the classes, added by me
+      instances.pred_classes.apply_(lambda x: x if x in [46, 75, 79, 47, 39] else 0)
+      # print(instances.pred_classes)
+      out = viz.draw_instance_predictions(instances)
       self.publish_predictions(prediction)
+      # print(prediction["instances"].to("cpu").pred_classes)
+  
       # print(prediction)
       # print(f"{h} x {w}")
       # print(out)
