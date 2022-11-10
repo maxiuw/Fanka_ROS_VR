@@ -26,7 +26,7 @@ from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.utils.visualizer import Visualizer
 from detectron2.data import MetadataCatalog, DatasetCatalog
-
+from detectron2.structures import Instances 
 
 class Image_converter(Trainer):
 
@@ -57,6 +57,7 @@ class Image_converter(Trainer):
     self.trainer.load_buildin_model()
     self.dictopub = {'bb': [], 'classes':None}
     self.current_time = time.time() 
+    self.filtered_classes = []
   
 
   def rename(self):
@@ -68,9 +69,15 @@ class Image_converter(Trainer):
     # vase 86 - bana
     # cheating with renaming, change for the real project 
     # print(self.metadata)
-    print(self.metadata.thing_classes.index("banana"), self.metadata.thing_classes.index("apple"))
     self.metadata.thing_classes[self.metadata.thing_classes.index("vase")] = "banana"
-    self.metadata.thing_classes[self.metadata.thing_classes.index("toothbrush")] = "banana"
+    self.metadata.thing_classes[self.metadata.thing_classes.index("toothbrush")] = "cube"
+    self.metadata.thing_classes[self.metadata.thing_classes.index("knife")] = "cube"
+    self.metadata.thing_classes[self.metadata.thing_classes.index("baseball bat")] = "pen"
+    for c in range(len(self.metadata.thing_classes)):
+      if self.metadata.thing_classes[c] in ["banana", "pen", "apple", "cube", "apple"]:
+        self.filtered_classes.append(c)
+    print(self.filtered_classes)
+
 
   
   def publish_predictions(self, predictions):
@@ -110,8 +117,24 @@ class Image_converter(Trainer):
       # # print(prediction)
       viz = Visualizer(rotated[:, :,::-1], self.metadata, scale=1.2)
       instances = prediction["instances"].to("cpu")
+      # print(prediction["instances"].to("cpu"))
       # filtering the classes, added by me
-      instances.pred_classes.apply_(lambda x: x if x in [46, 75, 79, 47, 39] else 0)
+      # new_instance = Instances((256,256))
+      # new_boxes = []
+      # new_pred_classes = []  
+      # for i in range(len(instances.pred_classes)):
+      #   if instances.pred_classes[i] in [46, 75, 34, 47, 39]:
+      #     new_boxes.append(instances.pred_boxes[i])
+      #     new_pred_classes.append(instances.pred_classes[i])
+      # # instances.num_instances = len(new_pred_classes)
+      # instances.pred_classes = torch.FloatTensor(new_pred_classes)
+      # instances.pred_boxes = torch.FloatTensor(new_boxes)
+      
+      # filtering 
+
+      instances.pred_classes.apply_(lambda x: x if x in self.filtered_classes else 0)
+      
+      # print(instances)
       # print(instances.pred_classes)
       out = viz.draw_instance_predictions(instances)
       self.publish_predictions(prediction)
@@ -127,9 +150,12 @@ class Image_converter(Trainer):
 
     # Publish the image
     try:
+      # rotated_img = cv2.rotate(out.get_image()[:, :, ::-1],ROTATE_180)
+      # print(rotated_img.shape)
       # out = out.get_image()[:, :, ::-1]
       self.image_pub.publish(self.bridge.cv2_to_imgmsg(
-                        cv2.rotate(cv2.resize(out.get_image()[:, :, ::-1], (256,256), interpolation = cv2.INTER_AREA),ROTATE_180), "rgb8"))
+                        cv2.resize(cv2.rotate(out.get_image()[:, :, ::-1],ROTATE_180), (640,480), interpolation = cv2.INTER_AREA), "rgb8")) #
+
     except CvBridgeError as e:
       print(f"this is error 3 {e}")
 
