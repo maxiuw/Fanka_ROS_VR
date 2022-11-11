@@ -34,11 +34,13 @@ class Image_converter(Trainer):
     self.model = None
     self.cfg = None
     self.setup_model()
-    self.image_pub = rospy.Publisher("/myresult", Image, queue_size=2)
+    self.image_pub_top = rospy.Publisher("/myresult", Image, queue_size=2)
+    self.image_pub_rs = rospy.Publisher("/myresult_rs", Image, queue_size=2)
     self.prediction_pub = rospy.Publisher("/predictedObjects", String, queue_size=2)
     self.metadata = MetadataCatalog.get(self.trainer.cfg.DATASETS.TEST[0])
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/camera_top/image_raw", Image, self.callback)
+    self.image_sub = rospy.Subscriber("/camera_top/image_raw", Image, self.callback, callback_args=["top"])
+    self.image_sub_rs = rospy.Subscriber("/camera/color/image_raw", Image, self.callback, callback_args=["rs"])
     # self.trainer = Trainer()
     # self.metadata.set(**{'person':'bla'})
     self.rename()
@@ -69,15 +71,16 @@ class Image_converter(Trainer):
     # vase 86 - bana
     # cheating with renaming, change for the real project 
     # print(self.metadata)
-    self.metadata.thing_classes[self.metadata.thing_classes.index("vase")] = "banana"
+    self.metadata.thing_classes[self.metadata.thing_classes.index("vase")] = "apple"
     self.metadata.thing_classes[self.metadata.thing_classes.index("toothbrush")] = "cube"
     self.metadata.thing_classes[self.metadata.thing_classes.index("knife")] = "cube"
     self.metadata.thing_classes[self.metadata.thing_classes.index("baseball bat")] = "pen"
+    print(self.metadata.thing_classes.index("orange"))
     for c in range(len(self.metadata.thing_classes)):
-      if self.metadata.thing_classes[c] in ["banana", "pen", "apple", "cube", "apple"]:
+      if self.metadata.thing_classes[c] in ["banana", "pen", "apple", "cube", "apple", "orange"]:
         self.filtered_classes.append(c)
     print(self.filtered_classes)
-
+    pass
 
   
   def publish_predictions(self, predictions):
@@ -88,7 +91,12 @@ class Image_converter(Trainer):
       # print(self.dictopub["bb"].tensor)
       self.prediction_pub.publish(json.dumps(self.dictopub))
 
-  def callback(self, data):
+  def callback(self, data, args):
+    publisher = self.image_pub_top
+    encoding = "rgb8"
+    if (args[0] == "rs"):
+      publisher = self.image_pub_rs
+      encoding =  "bgr8"
     # print(self.current_time - time.time())
     if (time.time() - self.current_time  < 0.1):
       return
@@ -132,7 +140,7 @@ class Image_converter(Trainer):
       
       # filtering 
 
-      instances.pred_classes.apply_(lambda x: x if x in self.filtered_classes else 0)
+      # instances.pred_classes.apply_(lambda x: x if x in self.filtered_classes else 0)
       
       # print(instances)
       # print(instances.pred_classes)
@@ -147,14 +155,15 @@ class Image_converter(Trainer):
       # # plt.show()
     except TypeError as e:  
       print(f"this is error 2 {e}")
-
-    # Publish the image
+    # check from which camera you are publishing 
+    
+      # Publish the image
     try:
       # rotated_img = cv2.rotate(out.get_image()[:, :, ::-1],ROTATE_180)
       # print(rotated_img.shape)
       # out = out.get_image()[:, :, ::-1]
-      self.image_pub.publish(self.bridge.cv2_to_imgmsg(
-                        cv2.resize(cv2.rotate(out.get_image()[:, :, ::-1],ROTATE_180), (640,480), interpolation = cv2.INTER_AREA), "rgb8")) #
+      publisher.publish(self.bridge.cv2_to_imgmsg(
+                        cv2.resize(cv2.rotate(out.get_image()[:, :, ::-1],ROTATE_180), (640,480), interpolation = cv2.INTER_AREA), encoding)) #
 
     except CvBridgeError as e:
       print(f"this is error 3 {e}")
