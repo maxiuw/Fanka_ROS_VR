@@ -1,5 +1,24 @@
+<?xml version="1.0"?>
 <launch>
+    <!-- after launching this, remeber to start show_unity (deep learning part from mapping conda env) -->
+    <!-- real sense launch  -->
+    
 
-    <node name="image" pkg="visionUnityproj" type="show_unity.py" output="screen" respawn="true"/>
+    <!-- camera top launch -->
 
+
+    <!-- endpoint -->
+    <arg name="tcp_ip" default="192.168.0.130"/>
+    <arg name="tcp_port" default="11312"/>
+
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch"/>
+    <include file="$(find video_stream_opencv)/launch/camera.launch">
+        <arg name="camera_name" default="camera_top" />
+        <arg name="video_stream_provider" value="0" />
+        <arg name="resize" value="false" />
+    </include>
+    <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch">
+        <arg name="tcp_ip" default="$(arg tcp_ip)"/>
+        <arg name="tcp_port" default="11312"/>
+    </include>
 </launch>

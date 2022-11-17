@@ -1,4 +1,7 @@
 float64[] current_joints
-geometry_msgs/Pose[] poses
+geometry_msgs/Pose[] pre_pick_poses
+geometry_msgs/Pose pick_pose
+geometry_msgs/Pose[] post_pick_poses
+geometry_msgs/Pose place_pose
 ---
-moveit_msgs/RobotTrajectory[] trajectories
+panda_msgs/PandaTrajectoryList trajecotry_list

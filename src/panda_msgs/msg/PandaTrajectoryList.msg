@@ -1,0 +1,3 @@
+moveit_msgs/RobotTrajectory[] trajectories_prepick
+moveit_msgs/RobotTrajectory[] trajectories_pick
+moveit_msgs/RobotTrajectory[] trajectories_postpick
