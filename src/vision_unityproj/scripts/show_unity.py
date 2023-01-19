@@ -169,7 +169,36 @@ class Image_converter(Trainer):
 
     except CvBridgeError as e:
       print(f"this is error 3 {e}")
-
+  def bb_drawer(self, textfile):
+    pass
+  def fake_bb(self, data):
+    # publishing and image with "fake" predictions to simulate system failure
+    # set up
+    publisher = self.image_pub_rs
+    encoding =  "bgr8"
+    # gets the center of the class: bb 
+    # draws the bb on the image 
+    try:
+      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(f"this is error 1 {e}")   
+    
+    try:
+      # !!!!!!!!!!!!!!! check if the detections will be moved now (probably they will) since the probelm was mirrored image 
+        # grab the dimensions to calculate the center
+      (h, w) = cv_image.shape[:2]
+      center = (w / 2, h / 2)
+      # rotate the image by 180 degrees
+      M = cv2.getRotationMatrix2D(center, 180, 1.0)
+      rotated = cv2.warpAffine(cv_image, M, (w, h))
+      rotated = rotated[:,::-1]
+    except TypeError as e:  
+      print(f"this is error 2 {e}")
+      
+      image = cv2.rectangle(image, (x, y), (x + bb_w, y + bb_h), (36,255,12), 1)
+      publisher.publish(self.bridge.cv2_to_imgmsg(
+                        cv2.resize(cv2.rotate(out.get_image()[:, :, ::-1],ROTATE_180), (640,480), interpolation = cv2.INTER_AREA), encoding)) #
+      # cv2.putText(image, 'Fedex', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (36,255,12), 2)  
   
 def main(args):
   rospy.init_node('ImageAnalizer', anonymous=True)
