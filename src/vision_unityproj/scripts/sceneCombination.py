@@ -24,20 +24,20 @@ class Scene_Maker():
         #     shutil.rmtree(path + "/setup_folder")
         #     os.mkdir(path + "/setup_folder")  
         # path += "/setup_folder"
-        poses = [[0, 0.5], [-0.1, 0.55], [0.1, 0.6]]
+        poses = [[0.2, 0.45], [0.04, 0.45], [-0.125, 0.45]]
         classes = ["banana", "CubeDetected", "Food_Apple_Red"]
         # start with the order in which they won't be detected
-        random.shuffle(classes)
+        # random.shuffle(classes)
         for i in range(len(classes)):
             # shuffle poses 
             d_classes = {}
             m_classes = {}
-            random.shuffle(poses)
+            # random.shuffle(poses)
             for j in range(len(classes)):
                 # remove object i or rather not include it 
                 if (j == i):
                     m_classes[f"{classes[j]}"] = f"{poses[j][0]}, {poses[j][1]}" # save the bb for each missing class             
-                    continue
+                #     continue
                 # save the bb for each detected class 
                 d_classes[f"{classes[j]}"] = f"{poses[j][0]}, {poses[j][1]}"
             # append d_classes of scene i in the list of detected classes and missing classes
@@ -51,7 +51,7 @@ class Scene_Maker():
         while not rospy.is_shutdown():
             hello_str = "hello world %s" % rospy.get_time()
             # rospy.loginfo(hello_str)
-            
+            print(self.missing_class[self.scene_idx])
             self.detected_classes_pub.publish(json.dumps(self.detected_classes[self.scene_idx]))
             self.missing_class_pub.publish(json.dumps(self.missing_class[self.scene_idx]))
             rate = rospy.Rate(10) # 10hz
